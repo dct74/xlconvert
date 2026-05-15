@@ -2,7 +2,6 @@ import Foundation
 import CoreXLSX
 
 // MARK: - File Rename Processor
-// Matches Python file_renamer.py parsing/naming logic exactly.
 struct FileRenameProcessor {
     let excelFile: URL
     let coordinator: RenameStateManager
@@ -33,7 +32,7 @@ struct FileRenameProcessor {
         var emptyFiles = [String]()
         let baseDir = excelFile.deletingLastPathComponent()
 
-        // Collect contexts for each folder (matches Python get_excel_context_for_file)
+        // Collect contexts for each folder
         var folderContexts = [URL: (context: ExcelContext, sheetName: String)]()
         for folder in filesByFolder.keys {
             if let ctx = resolveContext(folder: folder) {
@@ -56,10 +55,10 @@ struct FileRenameProcessor {
 
             Console.info("Using worksheet: \(sheetName)")
 
-            // Parse folder name for fallback row number (matches Python ParseResult.from_folder_path)
+            // Parse folder name for fallback row number
             let parseResult = ParseResult.from(folderPath: folder)
 
-            // Sort preference (matches Python per-sheet sort question)
+            // Sort preference
             print("\nSort files for worksheet '\(sheetName)'? (y/n): ", terminator: "")
             let sortChoice = readLine()?.trimmingCharacters(in: .whitespaces).lowercased() ?? ""
 
@@ -118,7 +117,7 @@ struct FileRenameProcessor {
             }
         }
 
-        // Finalize batch (matches Python rename_history.commit_batch)
+        // Finalize batch
         if !allOps.isEmpty, let backupDir = coordinator.backupDirectory {
             let batch = RenameBatch(operations: allOps, backupDirName: backupDir.lastPathComponent)
             coordinator.appendBatch(batch)
@@ -134,7 +133,6 @@ struct FileRenameProcessor {
     // MARK: - File Collection and Context Resolution
 
     private func collectFiles() -> [URL] {
-        // matcher Python collect_files_from_folders
         let fm = FileManager.default
         let excelDir = excelFile.deletingLastPathComponent()
         let excelFilename = StringTransform.sanitize(excelFile.deletingPathExtension().lastPathComponent)
@@ -156,11 +154,11 @@ struct FileRenameProcessor {
                   values.isRegularFile == true else { continue }
 
             let name = fileURL.lastPathComponent
-            // Skip backup dirs (matches Python: if BACKUP_DIR_PREFIX in root_path.name)
+            // Skip backup dirs
             let parentFolderName = fileURL.deletingLastPathComponent().lastPathComponent
             if parentFolderName.hasPrefix(Config.Paths.backupPrefix) { continue }
 
-            // Skip .DS_Store and the excel file itself (matches Python)
+            // Skip .DS_Store and the excel file itself
             if name == Config.dsStore || name == excelFile.lastPathComponent { continue }
 
             files.append(fileURL)
@@ -169,7 +167,6 @@ struct FileRenameProcessor {
     }
 
     private func resolveContext(folder: URL) -> (context: ExcelContext, sheetName: String)? {
-        // Matches Python find_sheet_for_folder logic: use folder name relative to excel dir
         let excelDir = excelFile.deletingLastPathComponent()
         let excelName = StringTransform.sanitize(excelFile.deletingPathExtension().lastPathComponent)
 
@@ -194,7 +191,7 @@ struct FileRenameProcessor {
 
         // Find matching sheet by name
         guard let matchedName = ConsoleIO.findSheetName(in: availableNames, target: sheetName) else {
-            // Fallback: use first sheet (matches Python)
+            // Fallback: use first sheet
             if let firstName = availableNames.first {
                 Console.warning("Sheet '\(sheetName)' not found, using first sheet '\(firstName)'")
                 if let ctx = try? ExcelParser.readExcelToGrid(path: excelFile, sheetName: firstName, startRow: Config.Limits.defaultExcelStartRow) {
@@ -234,7 +231,6 @@ struct FileRenameProcessor {
     // MARK: - Sorting
 
     private func askSortColumn(ctx: ExcelContext, sheetName: String) -> String? {
-        // Matches Python get_sort_column: tries up to MAX_SORT_ATTEMPTS
         for _ in 0..<Config.Limits.maxSortAttempts {
             print("Specify sort column for Sheet '\(sheetName)' (A-Z) or press Enter to sort by row number: ", terminator: "")
             guard let input = readLine()?.trimmingCharacters(in: .whitespaces).uppercased(), !input.isEmpty else {
@@ -251,9 +247,6 @@ struct FileRenameProcessor {
     }
 
     private func buildRowMapping(ctx: ExcelContext, colIdx: Int) -> [Int: Int] {
-        // Matches Python create_row_mapping
-        // Python: df_with_index["_original_row"] = range(EXCEL_START_ROW, len(df) + EXCEL_START_ROW)
-        // Python: df_sorted = df_with_index.sort_values(by="_sort_key")
         let sortedIndices = (1..<ctx.grid.count).sorted { a, b in
             let valA = (colIdx < ctx.grid[a].count ? ctx.grid[a][colIdx] : "").lowercased()
             let valB = (colIdx < ctx.grid[b].count ? ctx.grid[b][colIdx] : "").lowercased()
@@ -261,16 +254,14 @@ struct FileRenameProcessor {
             return valA < valB
         }
         var mapping = [Int: Int]()
-        // Python: row_mapping[original_row] = order_num
-        // original_row in Python = idx + EXCEL_START_ROW, where idx = 0-based DataFrame index
         // In Swift grid: idx = r - 1, so original_row = (r-1) + 2 = r + 1
         for (order, r) in sortedIndices.enumerated() {
-            mapping[r + 1] = order + 1  // r+1 = Excel row number (matches Python row_num)
+            mapping[r + 1] = order + 1  // r+1 = Excel row number
         }
         return mapping
     }
 
-    // MARK: - Core Rename Logic (matches Python rename_single_file_compat)
+    // MARK: - Core Rename Logic
 
     private enum RenameResult {
         case success(RenameOperation)
@@ -279,7 +270,6 @@ struct FileRenameProcessor {
     }
 
     private func getFileNamePartType(_ filename: String) -> FileNamePartType {
-        // Matches Python get_filename_part_type
         let stem = URL(fileURLWithPath: filename).deletingPathExtension().lastPathComponent
         if stem.isEmpty { return .empty }
         let isDigits = stem.allSatisfy { $0.isASCII && $0.isNumber }
@@ -307,7 +297,7 @@ struct FileRenameProcessor {
         let extWithDot = ext.isEmpty ? "" : ".\(ext)"
         let parts = namePart.split(separator: "-").map(String.init)
 
-        // Extract row number and column parts (matches Python logic exactly)
+        // Extract row number and column parts
         var rowNum: Int?
         var startIdx = 0
         let partType = getFileNamePartType(filename)
@@ -330,13 +320,13 @@ struct FileRenameProcessor {
             return .failure("No row number found: \(filename)", nil)
         }
 
-        // Row number validation (matches Python get_row_index)
-        let dataRowIndex = row - ctx.startRow + 1  // Python: row_num - EXCEL_START_ROW
+        // Row number validation
+        let dataRowIndex = row - ctx.startRow + 1
         guard dataRowIndex >= 1, dataRowIndex < ctx.grid.count else {
             return .failure("Row number \(row) out of range: \(filename)", nil)
         }
 
-        // Extract column parts (matches Python start_idx logic)
+        // Extract column parts
         let columnParts: [String]
         if startIdx == 0 {
             columnParts = parts
@@ -346,13 +336,13 @@ struct FileRenameProcessor {
             columnParts = []
         }
 
-        // Validate column parts (matches Python: all must be letters-only)
+        // Validate column parts
         let allLetters = columnParts.allSatisfy { (try? Config.Regex.lettersOnly.wholeMatch(in: $0)) != nil }
         if !columnParts.isEmpty && !allLetters {
             return .failure("Invalid column letters in filename: \(filename)", nil)
         }
 
-        // Order string (matches Python)
+        // Order string
         let orderStr: String
         if useCustomSort, let mapping = sheetRowMapping, let orderNum = mapping[row] {
             orderStr = String(format: "%0\(paddingWidth)d-", orderNum)
@@ -374,7 +364,7 @@ struct FileRenameProcessor {
             }
         }
 
-        // Build headers dict for column name lookup (matches Python get_headers_dict)
+        // Build headers dict for column name lookup
         var letterToHeader: [String: String] = [:]
         for (i, header) in ctx.grid[headerRowIndex].enumerated() {
             if let letter = ExcelColumns.letter(for: i) {
@@ -383,12 +373,12 @@ struct FileRenameProcessor {
             }
         }
 
-        // Generate new filename parts (matches Python three branches)
+        // Generate new filename parts
         let newParts: [String]
         let dataRow = ctx.grid[dataRowIndex]
 
         if columnParts.isEmpty {
-            // No column letters → scan ALL columns for non-empty values (matches Python)
+            // No column letters → scan ALL columns for non-empty values
             var allEmpty = true
             var collected = [String]()
             for colIdx in 0..<dataRow.count {
@@ -404,7 +394,7 @@ struct FileRenameProcessor {
             if allEmpty { return .failure("All columns empty: \(filename)", nil) }
             newParts = collected
         } else if columnParts.count == 1, let singlePart = columnParts.first {
-            // Single part with letters → use header names (matches Python)
+            // Single part with letters → use header names
             var collected = [String]()
             for ch in singlePart.uppercased() {
                 let colLetter = String(ch)
@@ -417,7 +407,7 @@ struct FileRenameProcessor {
             }
             newParts = collected
         } else {
-            // Multiple parts → flatten letters, get cell values (matches Python)
+            // Multiple parts → flatten letters, get cell values
             var allLetters = [String]()
             for part in columnParts {
                 for ch in part.uppercased() { allLetters.append(String(ch)) }

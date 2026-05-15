@@ -2,7 +2,6 @@ import Foundation
 import CoreXLSX
 
 // MARK: - IPO Template Processor
-// Matches Python ipo_template_to_folders.py logic exactly.
 // Hardcoded columns A(Chapter), B(Subsection), C(Detail), starts at Excel row 3.
 struct IPOTemplateProcessor: FolderProcessor {
     let excelFile: URL
@@ -66,7 +65,7 @@ struct IPOTemplateProcessor: FolderProcessor {
             return raw
         }
 
-        // Build merged-cell map (matches Python merged_map logic)
+        // Build merged-cell map
         var mergedMap: [String: String] = [:]
         for mc in mergeItems {
             let parts = mc.reference.split(separator: ":")
@@ -92,7 +91,7 @@ struct IPOTemplateProcessor: FolderProcessor {
             }
         }
 
-        // Helper to get cell value (matches Python get_cell_value)
+        // Helper to get cell value
         func getCellValue(row: Int, col: Int) -> String? {
             guard let colLetter = ExcelColumns.letter(for: col - 1) else { return nil }
             let key = "\(row):\(colLetter)"
@@ -109,7 +108,7 @@ struct IPOTemplateProcessor: FolderProcessor {
             return nil
         }
 
-        // Create top folder (matches Python: top_folder = excel_file.parent / sanitize(excel_file.stem))
+        // Create top folder
         let topFolderName = StringTransform.sanitize(excelFile.deletingPathExtension().lastPathComponent)
         let topFolder = excelFile.deletingLastPathComponent().appendingPathComponent(topFolderName)
         var foldersCreated = 0
@@ -125,7 +124,7 @@ struct IPOTemplateProcessor: FolderProcessor {
             return
         }
 
-        // Process rows from row 3 onward (matches Python: for row in range(3, max_row + 1))
+        // Process rows from row 3 onward
         var currentChapterFolder: URL?
         var currentSubsectionFolder: URL?
         var currentAVal = ""
@@ -140,12 +139,12 @@ struct IPOTemplateProcessor: FolderProcessor {
             let valB = rawB.trimmingCharacters(in: .whitespaces)
             let valC = rawC.trimmingCharacters(in: .whitespaces)
 
-            // Skip blank rows (matches Python: if not val_a and not val_b and not val_c: continue)
+            // Skip blank rows
             if valA.isEmpty && valB.isEmpty && valC.isEmpty {
                 continue
             }
 
-            // Chapter: A has value, B and C are empty (matches Python: if val_a and not val_b and not val_c)
+            // Chapter: A has value, B and C are empty
             if !valA.isEmpty && valB.isEmpty && valC.isEmpty {
                 let folderName = StringTransform.sanitize(valA)
                 if folderName.isEmpty { continue }
@@ -159,11 +158,11 @@ struct IPOTemplateProcessor: FolderProcessor {
                 continue
             }
 
-            // Subsection: A and B both have values (matches Python: elif val_a and val_b)
+            // Subsection: A and B both have values
             if !valA.isEmpty && !valB.isEmpty {
                 guard let chapterFolder = currentChapterFolder else { continue }
 
-                // Only create subsection folder if A or B changed (matches Python)
+                // Only create subsection folder if A or B changed
                 if currentSubsectionFolder == nil || valA != currentAVal || valB != currentBVal {
                     let folderName = StringTransform.sanitize("\(StringTransform.sanitize(valA)) \(StringTransform.sanitize(valB))")
                     if folderName.isEmpty { continue }
@@ -176,7 +175,7 @@ struct IPOTemplateProcessor: FolderProcessor {
                 }
             }
 
-            // Detail: C has value (matches Python: if val_c: — note: this is NOT elif, so it runs after the subsection block)
+            // Detail: C has value
             if !valC.isEmpty {
                 guard let subFolder = currentSubsectionFolder else { continue }
 

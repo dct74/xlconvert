@@ -1,12 +1,12 @@
 import Foundation
 
-// MARK: - IPO auto-detection (matches Python is_ipo_template)
+// MARK: - IPO auto-detection
 private func isIPOTemplate(_ url: URL) -> Bool {
     let filename = url.lastPathComponent.lowercased()
     return filename.contains("ipo项目模板")
 }
 
-// MARK: - Main menu (matches Python show_menu, without IPO option since it's auto-detected)
+// MARK: - Main menu
 private func showMenu(readLine: @escaping () -> String?) -> String {
     print()
     Console.panel("Excel to Folders", """
@@ -31,10 +31,10 @@ private func showMenu(readLine: @escaping () -> String?) -> String {
     }
 }
 
-// MARK: - Main entry (matches Python main.py flow)
+// MARK: - Main entry
 if let excelFile = ConsoleIO.getExcelFile() {
     do {
-        // IPO auto-detection (matches Python: if is_ipo_template(excel_file) → process and exit)
+        // IPO auto-detection
         if isIPOTemplate(excelFile) {
             Console.info("\nIPO template file detected: \(excelFile.lastPathComponent)")
             Console.rule()
@@ -45,7 +45,7 @@ if let excelFile = ConsoleIO.getExcelFile() {
             exit(0)
         }
 
-        // Not IPO template — show menu (matches Python else branch)
+        // Not IPO template — show menu
         let coordinator = RenameStateManager(excelFile: excelFile)
         let mainReadLine: () -> String? = { Swift.readLine() }
         let processor = ExcelProcessor(excelFile: excelFile, coordinator: coordinator, readLine: mainReadLine)

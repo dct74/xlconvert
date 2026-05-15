@@ -15,7 +15,7 @@ struct ControlSheetProcessor: FolderProcessor {
         self.readLine = readLine
     }
 
-    // MARK: - Rule Parsing (matches Python parseControlRuleInput)
+    // MARK: - Rule Parsing
     private func parseControlRuleInput(_ input: String, ctx: ExcelContext) -> [FolderRule] {
         var rules = [FolderRule]()
         for part in input.split(separator: ",") {
@@ -151,7 +151,7 @@ struct ControlSheetProcessor: FolderProcessor {
         return allSheets.isEmpty ? nil : allSheets
     }
 
-    // MARK: - Resolve Folder Components (matches Python resolve logic)
+    // MARK: - Resolve Folder Components
     private func resolveFolderComponents(
         for dataIndex: Int,   // 1-based data row index (grid[r] where r = dataIndex)
         row: [String],
@@ -163,14 +163,14 @@ struct ControlSheetProcessor: FolderProcessor {
 
         for rule in rules {
             guard let colIdx = ExcelColumns.index(for: rule.colLetter), colIdx < row.count else { return nil }
-            let excelRowNum = dataIndex + 1  // Python: idx + EXCEL_START_ROW where idx = dataIndex - 1, so (dataIndex-1) + 2 = dataIndex + 1
+            let excelRowNum = dataIndex + 1
 
             if rule.type == .singleCell {
-                // Only process matching row (Python: if idx + EXCEL_START_ROW != rule.row → skip)
+                // Only process matching row
                 guard let ruleRow = rule.row, dataIndex + 1 == ruleRow else { return nil }
             }
 
-            // Get cell value (matches Python: check isna/empty)
+            // Get cell value
             let cellValue = colIdx < row.count ? row[colIdx] : ""
             let trimmed = cellValue.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty else { return nil }
@@ -206,12 +206,11 @@ struct ControlSheetProcessor: FolderProcessor {
         // Subfolders only when rules + data are available
         guard let config = config, !config.rules.isEmpty, let ctx = ctx, ctx.grid.count > 1 else { return }
 
-        // padding_width = len(str(len(df) + 1)) = len(str(grid.count)) (Python matches)
+        // padding_width = len(str(len(df) + 1)) = len(str(grid.count))
         let paddingWidth = String(ctx.grid.count).count
 
-        // data starts at grid[1]: dataIndex = 1 corresponds to Python df.iterrows() idx 0
+        // data starts at grid[1]
         for r in 1..<ctx.grid.count {
-            // Python: for idx, row in df.iterrows(): → idx = r - 1
             guard let components = resolveFolderComponents(
                 for: r,
                 row: ctx.grid[r],

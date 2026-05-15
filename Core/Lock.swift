@@ -14,7 +14,7 @@ final class UnfairLock {
         _lock.deallocate()
     }
 
-    func withLock<T>(_ block: () throws -> T) rethrows -> T {
+    @discardableResult func withLock<T>(_ block: () throws -> T) rethrows -> T {
         os_unfair_lock_lock(_lock)
         defer { os_unfair_lock_unlock(_lock) }
         return try block()

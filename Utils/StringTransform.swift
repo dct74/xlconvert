@@ -54,16 +54,16 @@ enum StringTransform {
         var strValue = value.trimmingCharacters(in: .whitespaces)
         guard !strValue.isEmpty else { return "" }
 
-        // Remove date-time suffix (matches Python DATE_TIME_SUFFIX_PATTERN)
+        // Remove date-time suffix
         strValue = strValue.replacing(Config.Regex.dateTimeSuffix, with: "")
 
-        // If all digits and not 8 digits, early return sanitize (matches Python)
+        // If all digits and not 8 digits, early return sanitize
         let isAllDigits = strValue.unicodeScalars.allSatisfy { CharacterSet.decimalDigits.contains($0) }
         if isAllDigits && strValue.count != 8 {
             return sanitize(strValue)
         }
 
-        // Try date separator split (matches Python DATE_SEPARATOR_PATTERN = r"[-/.]")
+        // Try date separator split
         let parts = strValue.components(separatedBy: CharacterSet(charactersIn: "-/.")).filter { !$0.isEmpty }
         if parts.count == 3 {
             // YYYY-MM-DD
@@ -84,7 +84,7 @@ enum StringTransform {
             }
         }
 
-        // Chinese date pattern search (matches Python CHINESE_DATE_PATTERN.search)
+        // Chinese date pattern search
         let nsStr = strValue as NSString
         let chinesePattern = "(\\d{4})年(\\d{1,2})月(\\d{1,2})日"
         if let cnRegex = try? NSRegularExpression(pattern: chinesePattern),
@@ -100,7 +100,7 @@ enum StringTransform {
             }
         }
 
-        // 8-digit date (matches Python EIGHT_DIGIT_PATTERN)
+        // 8-digit date
         if (try? Config.Regex.eightDigit.wholeMatch(in: strValue)) != nil {
             if let y = Int(strValue.prefix(4)),
                let m = Int(strValue[strValue.index(strValue.startIndex, offsetBy: 4)..<strValue.index(strValue.startIndex, offsetBy: 6)]),
@@ -110,7 +110,7 @@ enum StringTransform {
             }
         }
 
-        // Fallback: sanitize (matches Python)
+        // Fallback: sanitize
         return sanitize(strValue)
     }
 }

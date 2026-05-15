@@ -117,7 +117,7 @@ enum ExcelParser {
 
         var grid = [[String]](); var hRow = [String]()
         for c in 0..<maxCol {
-            if let letter = ExcelColumns.letter(for: c) { hRow.append(gridData[startRow - 1]?[c] ?? "\(Config.Defaults.defaultColumnPrefix)\(c+1)") }
+            if ExcelColumns.letter(for: c) != nil { hRow.append(gridData[startRow - 1]?[c] ?? "\(Config.Defaults.defaultColumnPrefix)\(c+1)") }
             else { hRow.append("\(Config.Defaults.defaultColumnPrefix)\(c+1)") }
         }
         grid.append(hRow)

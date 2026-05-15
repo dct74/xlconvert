@@ -50,7 +50,7 @@ struct ExcelContext {
 enum FileNamePartType { case digitsOnly, lettersOnly, mixed, empty }
 struct FileMeta { let row: Int; let colLetters: [String]; let ext: String; let directory: URL; let originalFilename: String }
 
-// MARK: - ParseResult (matches Python ParseResult)
+// MARK: - ParseResult
 struct ParseResult {
     let sheetName: String?
     let rowNumber: Int?

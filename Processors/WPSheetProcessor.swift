@@ -2,8 +2,6 @@ import Foundation
 import CoreXLSX
 
 // MARK: - WPSheet Processor
-// Matches Python wpsheet_to_folders.py logic exactly.
-// Fixed columns A(0), B(1), C(2), D(3), E(4). Auto-detects section/number patterns.
 struct WPSheetProcessor: FolderProcessor {
     let excelFile: URL
     let coordinator: RenameStateManager
@@ -60,7 +58,6 @@ struct WPSheetProcessor: FolderProcessor {
         Console.success("Folder creation completed: \(totalFoldersCreated) folders created")
     }
 
-    // Matches Python process_sheet_hierarchy exactly
     private func processSheetHierarchy(sheetFolder: URL, grid: [[String]]) -> Int {
         var foldersCreated = 0
         var currentSection: String? = nil
@@ -70,7 +67,7 @@ struct WPSheetProcessor: FolderProcessor {
         var currentBValue: String? = nil
         var processingNumber = false
 
-        // Data rows: grid[0]=header, grid[1+]=data (= Python df.iterrows() starting at idx=0)
+        // Data rows: grid[0]=header, grid[1+]=data
         for r in 1..<grid.count {
             let row = grid[r]
             let excelRowNum = r + 1  // idx+EXCEL_START_ROW = (r-1)+2 = r+1
@@ -100,7 +97,7 @@ struct WPSheetProcessor: FolderProcessor {
                 }
             }
 
-            // Process section row (matches Python: if row_has_section)
+            // Process section row
             if rowHasSection {
                 let secName = StringTransform.sanitize(sectionValue)
                 guard !secName.isEmpty else { continue }
@@ -117,7 +114,7 @@ struct WPSheetProcessor: FolderProcessor {
                 continue
             }
 
-            // Process number row (matches Python: elif row_has_number)
+            // Process number row
             if rowHasNumber {
                 guard let sec = currentSection else {
                     Console.warning("Number '\(numberValue)' found without preceding section at row \(excelRowNum), skipping")
@@ -138,17 +135,17 @@ struct WPSheetProcessor: FolderProcessor {
                 continue
             }
 
-            // Data row processing (matches Python data row block)
+            // Data row processing
             guard processingNumber, let sec = currentSection, let num = currentNumber else { continue }
 
-            // Minimum columns check (Python: if len(row) < 3: continue)
+            // Minimum columns check
             guard row.count >= 3 else { continue }
 
-            // Skip blank rows (Python: check columns A-E all empty)
+            // Skip blank rows
             let isBlank = (0..<min(5, row.count)).allSatisfy { row[$0].trimmingCharacters(in: .whitespaces).isEmpty }
             if isBlank { continue }
 
-            // Get values A-E (Python: row.iloc[0..4])
+            // Get values A-E
             let aVal = row.indices.contains(0) ? row[0] : ""
             let bVal = row.indices.contains(1) ? row[1] : ""
             let cVal = row.indices.contains(2) ? row[2] : ""
@@ -158,11 +155,11 @@ struct WPSheetProcessor: FolderProcessor {
             let aHasContent = !aVal.trimmingCharacters(in: .whitespaces).isEmpty
             let bHasContent = !bVal.trimmingCharacters(in: .whitespaces).isEmpty
 
-            // Track merged cell values (matches Python)
+            // Track merged cell values
             if aHasContent { currentAValue = aVal.trimmingCharacters(in: .whitespaces) }
             if bHasContent { currentBValue = bVal.trimmingCharacters(in: .whitespaces) }
 
-            // Determine A logic (matches Python)
+            // Determine A logic
             let useALogic: Bool
             let effectiveAVal: String?
             if let ca = currentAValue, !ca.isEmpty {
@@ -181,7 +178,7 @@ struct WPSheetProcessor: FolderProcessor {
             var level6Name = ""
 
             if useALogic, let ea = effectiveAVal {
-                // A logic: lvl4=A, lvl5=B+space+C, lvl6=D+space+E (matches Python)
+                // A logic: lvl4=A, lvl5=B+space+C, lvl6=D+space+E
                 let aStr = StringTransform.sanitize(ea)
                 guard !aStr.isEmpty else { continue }
                 level4Name = aStr
@@ -199,7 +196,7 @@ struct WPSheetProcessor: FolderProcessor {
                 let eStr = eVal.trimmingCharacters(in: .whitespaces).isEmpty ? "" : StringTransform.sanitize(eVal.trimmingCharacters(in: .whitespaces))
                 level6Name = "\(dStr) \(eStr)".trimmingCharacters(in: .whitespaces)
             } else {
-                // No-A logic: lvl4=B+C, lvl5=D+E, lvl6=none (matches Python)
+                // No-A logic: lvl4=B+C, lvl5=D+E, lvl6=none
                 let effectiveB: String?
                 if bHasContent { effectiveB = bVal.trimmingCharacters(in: .whitespaces) }
                 else if let cb = currentBValue, !cb.isEmpty { effectiveB = cb }
@@ -220,7 +217,7 @@ struct WPSheetProcessor: FolderProcessor {
                 level6Name = ""
             }
 
-            // Dedup level-4 folder (matches Python)
+            // Dedup level-4 folder
             let skipLevel4: Bool
             if useALogic, let ea = effectiveAVal {
                 skipLevel4 = (ea == lastCreatedAValue)
@@ -243,12 +240,12 @@ struct WPSheetProcessor: FolderProcessor {
                 }
             }
 
-            // Create level-5 folder (matches Python)
+            // Create level-5 folder
             if !level5Name.isEmpty {
                 let level5Folder = level4Folder.appendingPathComponent(level5Name)
                 FileSystem.createFolderSafely(at: level5Folder, count: &foldersCreated)
 
-                // Create level-6 folder (only in A logic — matches Python)
+                // Create level-6 folder
                 if useALogic && !level6Name.isEmpty {
                     let level6Folder = level5Folder.appendingPathComponent(level6Name)
                     FileSystem.createFolderSafely(at: level6Folder, count: &foldersCreated)

@@ -25,7 +25,7 @@ enum FileSystem {
         catch { Console.error("Failed to create directory \(url.path): \(error.localizedDescription)"); return false }
     }
 
-    static func createFolderSafely(at url: URL, count: inout Int) -> Bool {
+    @discardableResult static func createFolderSafely(at url: URL, count: inout Int) -> Bool {
         guard count < Config.Limits.maxFoldersToCreate else {
             Console.error("Reached safe limit of \(Config.Limits.maxFoldersToCreate) folders. Aborting creation.")
             return false
