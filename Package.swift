@@ -33,6 +33,7 @@ let package = Package(
                 "Utils/Console.swift",
                 "Utils/ConsoleIO.swift",
                 "Utils/ExcelColumns.swift",
+                "Utils/SequencePrefix.swift",
                 "Utils/StringTransform.swift",
             ]
         )

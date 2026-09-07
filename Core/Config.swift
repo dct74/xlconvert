@@ -32,15 +32,11 @@ enum Config {
         static let chineseSection = #/^第[一二三四五六七八九十]+部分/#
         static let chineseNumber = #/^[一二三四五六七八九十]+、/#
         static let dateTimeSuffix = #/\s+(\d{2}:\d{2}:\d{2}|\d{6})$/#
-        static let chineseDate = #/^(\d{4})年(\d{1,2})月(\d{1,2})日$/#
         static let eightDigit = #/^\d{8}$/#
         static let singleLetter = #/^([a-zA-Z])$/#
         static let rowCol = #/^(\d+)-([a-zA-Z])$/#
-        static let filenamePrefix = #/^(\d+)(?:-([a-zA-Z]+))?/#
         static let folderNamePattern = #/^(\d+)-(.+)$/#
         static let lettersOnly = #/^[a-zA-Z]+$/#
-        static let multiSpace = #/\s+/#
-        static let dateSeparator = #/[-/.]/#
     }
     enum InputKeys {
         static let yes = "y"

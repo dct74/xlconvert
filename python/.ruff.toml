@@ -1,0 +1,12 @@
+# Ruff config for the exconverter Python port.
+# BLE001 and SIM102 are intentionally allowed: broad `except Exception`
+# mirrors Swift's catch-all in processor loops (each continues gracefully),
+# and the nested conditionals are kept for fidelity to the Swift structure.
+line-length = 110
+
+[lint]
+select = ["E", "F", "I", "UP", "SIM", "BLE"]
+ignore = [
+    "BLE001",  # deliberate catch-all mirroring Swift `catch`
+    "SIM102",  # keep nested if for Swift-lineage readability
+]

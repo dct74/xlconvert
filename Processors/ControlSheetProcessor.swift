@@ -3,7 +3,6 @@ import CoreXLSX
 
 // MARK: - ControlSheet Processor
 // Creates a folder per sheet name, with optional subfolders based on user-specified column rules.
-// Creates a folder per sheet name, with optional subfolders based on user-specified column rules.
 struct ControlSheetProcessor: FolderProcessor {
     let excelFile: URL
     let coordinator: RenameStateManager
@@ -242,5 +241,9 @@ struct ControlSheetProcessor: FolderProcessor {
         }
         print()
         Console.success("Created \(totalCount) folders.")
+        let seq = SequencePrefix.addSequencePrefix(rootURL: topFolder)
+        if seq > 0 {
+            Console.info("Added numeric prefixes to \(seq) ordinal directories.")
+        }
     }
 }

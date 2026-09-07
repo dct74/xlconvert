@@ -1,0 +1,15 @@
+# Swift build products
+.build/
+.swiftpm/
+DerivedData/
+
+# Python (repo-level; also matches python/ subdir)
+.venv/
+.ruff_cache/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+
+# macOS
+.DS_Store

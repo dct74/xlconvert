@@ -56,6 +56,10 @@ struct WPSheetProcessor: FolderProcessor {
 
         print()
         Console.success("Folder creation completed: \(totalFoldersCreated) folders created")
+        let seq = SequencePrefix.addSequencePrefix(rootURL: topFolder)
+        if seq > 0 {
+            Console.info("Added numeric prefixes to \(seq) ordinal directories.")
+        }
     }
 
     private func processSheetHierarchy(sheetFolder: URL, grid: [[String]]) -> Int {

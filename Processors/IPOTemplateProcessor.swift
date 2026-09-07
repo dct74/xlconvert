@@ -188,6 +188,10 @@ struct IPOTemplateProcessor: FolderProcessor {
         }
 
         Console.success("Folder creation completed, created \(foldersCreated) folders in total")
+        let seq = SequencePrefix.addSequencePrefix(rootURL: topFolder)
+        if seq > 0 {
+            Console.info("Added numeric prefixes to \(seq) ordinal directories.")
+        }
         Console.info("Folder structure located at: \(topFolder.path)")
     }
 }
